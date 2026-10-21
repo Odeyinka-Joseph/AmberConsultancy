@@ -12,11 +12,12 @@ function doPost(e) {
     const raw = isBridge ? e.parameter.payload : (e && e.postData ? e.postData.contents : '{}');
     out = { data: route(JSON.parse(raw)) };
   } catch (err) {
-    out = { error: err.message, code: err.code || '' };
+    out = {
+      error: err && err.message ? err.message : String(err),
+      code: err && err.code ? err.code : ''
+    };
   }
 
-  // Browser requests from GitHub Pages arrive through a hidden form/iframe.
-  // Return HTML that posts the JSON response safely to the parent page.
   if (isBridge) {
     const message = JSON.stringify({
       __amberBridge: true,
@@ -24,14 +25,16 @@ function doPost(e) {
       response: out
     }).replace(/</g, '\\u003c');
 
+    // ALLOWALL is required because the response is loaded inside a hidden iframe
+    // on the GitHub Pages domain. Without this, the browser can block the frame
+    // and the frontend eventually reports "Failed to fetch" / no response.
     return HtmlService.createHtmlOutput(
       '<!doctype html><html><body><script>' +
       'window.parent.postMessage(' + message + ', "*");' +
-      '</script></body></html>'
-    );
+      '<\/script></body></html>'
+    ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
-  // Retain normal JSON behavior for non-browser/API callers.
   return ContentService.createTextOutput(JSON.stringify(out))
     .setMimeType(ContentService.MimeType.JSON);
 }
