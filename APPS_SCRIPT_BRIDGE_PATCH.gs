@@ -1,7 +1,6 @@
-// AMBER GitHub Pages -> Google Apps Script bridge
-// Replace the existing doPost(e) function in your Apps Script project with this one,
-// then deploy a NEW VERSION of the existing Web App deployment.
-// Keep the same /exec URL and set access to Anyone.
+// FINAL AMBER GitHub Pages -> Google Apps Script bridge
+// Replace ONLY the existing doPost(e) function in the live Apps Script project
+// with this function, save, then deploy a NEW VERSION of the existing Web App.
 
 function doPost(e) {
   let out;
@@ -9,7 +8,10 @@ function doPost(e) {
   const nonce = e && e.parameter ? String(e.parameter.bridge_nonce || '') : '';
 
   try {
-    const raw = isBridge ? e.parameter.payload : (e && e.postData ? e.postData.contents : '{}');
+    const raw = isBridge
+      ? e.parameter.payload
+      : (e && e.postData ? e.postData.contents : '{}');
+
     out = { data: route(JSON.parse(raw)) };
   } catch (err) {
     out = {
@@ -25,13 +27,19 @@ function doPost(e) {
       response: out
     }).replace(/</g, '\\u003c');
 
-    return HtmlService.createHtmlOutput(
-      '<!doctype html><html><body><script>' +
+    // IMPORTANT: emit a real closing </script> tag. The previous full backend
+    // accidentally emitted <\\/script>, which leaves the relay script malformed
+    // in the browser and causes every login request to time out.
+    const html = '<!doctype html><html><body><script>' +
       'window.top.postMessage(' + message + ', "*");' +
-      '<\/script></body></html>'
-    ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+      '</script></body></html>';
+
+    return HtmlService
+      .createHtmlOutput(html)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
-  return ContentService.createTextOutput(JSON.stringify(out))
+  return ContentService
+    .createTextOutput(JSON.stringify(out))
     .setMimeType(ContentService.MimeType.JSON);
 }
