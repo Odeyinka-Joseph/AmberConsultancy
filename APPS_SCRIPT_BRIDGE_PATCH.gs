@@ -25,12 +25,9 @@ function doPost(e) {
       response: out
     }).replace(/</g, '\\u003c');
 
-    // ALLOWALL is required because the response is loaded inside a hidden iframe
-    // on the GitHub Pages domain. Without this, the browser can block the frame
-    // and the frontend eventually reports "Failed to fetch" / no response.
     return HtmlService.createHtmlOutput(
       '<!doctype html><html><body><script>' +
-      'window.parent.postMessage(' + message + ', "*");' +
+      'window.top.postMessage(' + message + ', "*");' +
       '<\/script></body></html>'
     ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
