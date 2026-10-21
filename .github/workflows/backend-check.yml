@@ -11,35 +11,35 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Apps Script GET
+      - name: Check Apps Script deployment
         shell: bash
         run: |
           set -e
           URL='https://script.google.com/macros/s/AKfycbwXVDa29PnfEhkJ12RJ-eE6Hbz-tMUUugcb8YZCvcM0H0oDV6LSwwRK5pdLe2dbOhJ4Sg/exec'
-          echo '--- GET ---'
-          code=$(curl -sS -L -o /tmp/get.txt -w '%{http_code}' "$URL")
-          echo "HTTP $code"
-          head -c 1000 /tmp/get.txt || true
+
+          echo '--- GET redirect chain ---'
+          curl -sS -D /tmp/get.headers -o /tmp/get.first "$URL" || true
+          sed -n '1,80p' /tmp/get.headers || true
           echo
 
-      - name: Check Apps Script raw POST health
-        shell: bash
-        run: |
-          set -e
-          URL='https://script.google.com/macros/s/AKfycbwXVDa29PnfEhkJ12RJ-eE6Hbz-tMUUugcb8YZCvcM0H0oDV6LSwwRK5pdLe2dbOhJ4Sg/exec'
+          echo '--- GET followed ---'
+          curl -sS -L -o /tmp/get.txt -w 'HTTP=%{http_code}\nFINAL_URL=%{url_effective}\nREDIRECTS=%{num_redirects}\nCONTENT_TYPE=%{content_type}\n' "$URL"
+          echo 'TITLE:'
+          grep -oiE '<title>[^<]+' /tmp/get.txt | head -5 || true
+          echo 'AUTH MARKERS:'
+          grep -oiE 'sign in|accounts\.google\.com|authorization|access denied|permission|service unavailable|script function not found' /tmp/get.txt | sort -u | head -20 || true
+          echo 'EXPECTED API MARKER:'
+          grep -o 'AMBER API' /tmp/get.txt | head -5 || true
+          echo
+
           echo '--- RAW POST health ---'
-          code=$(curl -sS -L -o /tmp/raw.txt -w '%{http_code}' -H 'Content-Type: application/json' --data '{"action":"health"}' "$URL")
-          echo "HTTP $code"
-          head -c 1500 /tmp/raw.txt || true
+          curl -sS -L -o /tmp/raw.txt -w 'HTTP=%{http_code}\nFINAL_URL=%{url_effective}\nREDIRECTS=%{num_redirects}\nCONTENT_TYPE=%{content_type}\n' -H 'Content-Type: application/json' --data '{"action":"health"}' "$URL"
+          echo 'BODY MARKERS:'
+          grep -oE '\{"data":\{"ok":true\}\}|AMBER API|sign in|accounts\.google\.com|authorization|permission' /tmp/raw.txt | sort -u | head -20 || true
           echo
 
-      - name: Check Apps Script bridge POST health
-        shell: bash
-        run: |
-          set -e
-          URL='https://script.google.com/macros/s/AKfycbwXVDa29PnfEhkJ12RJ-eE6Hbz-tMUUugcb8YZCvcM0H0oDV6LSwwRK5pdLe2dbOhJ4Sg/exec'
           echo '--- BRIDGE POST health ---'
-          code=$(curl -sS -L -o /tmp/bridge.txt -w '%{http_code}' --data-urlencode 'payload={"action":"health"}' --data-urlencode 'bridge_nonce=diagnostic-test' "$URL")
-          echo "HTTP $code"
-          head -c 2000 /tmp/bridge.txt || true
+          curl -sS -L -o /tmp/bridge.txt -w 'HTTP=%{http_code}\nFINAL_URL=%{url_effective}\nREDIRECTS=%{num_redirects}\nCONTENT_TYPE=%{content_type}\n' --data-urlencode 'payload={"action":"health"}' --data-urlencode 'bridge_nonce=diagnostic-test' "$URL"
+          echo 'BRIDGE MARKERS:'
+          grep -oE '__amberBridge|diagnostic-test|window\.top\.postMessage|sign in|accounts\.google\.com|authorization|permission' /tmp/bridge.txt | sort -u | head -30 || true
           echo
