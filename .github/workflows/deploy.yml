@@ -25,6 +25,7 @@ jobs:
           rm -rf site
           mkdir -p site
           cp index.html site/index.html
+          cp admin-setup.html site/admin-setup.html
           cp public/header.jpg site/header.jpg
       - uses: actions/upload-pages-artifact@v3
         with:
