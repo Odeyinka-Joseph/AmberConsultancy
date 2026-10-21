@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+input, select, textarea { @apply w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand; }
+label { @apply block text-sm font-medium text-slate-700 mb-1; }
+.btn { @apply rounded-lg px-4 py-2 font-semibold disabled:opacity-50; }
+.btn-primary { @apply btn bg-navy text-white hover:opacity-90; }
+.btn-green { @apply btn bg-brand text-white hover:opacity-90; }
+.card { @apply bg-white rounded-2xl shadow-sm border border-slate-200 p-5; }
