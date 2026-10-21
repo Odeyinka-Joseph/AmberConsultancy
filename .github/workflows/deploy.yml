@@ -19,17 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - uses: actions/configure-pages@v5
-      - run: npm install
-      - run: npm run build
-        env:
-          VITE_API_URL: https://script.google.com/macros/s/AKfycbwXVDa29PnfEhkJ12RJ-eE6Hbz-tMUUugcb8YZCvcM0H0oDV6LSwwRK5pdLe2dbOhJ4Sg/exec
+      - name: Prepare static site
+        run: |
+          rm -rf site
+          mkdir -p site
+          cp index.html site/index.html
+          cp public/header.jpg site/header.jpg
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build
