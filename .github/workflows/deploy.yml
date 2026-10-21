@@ -1,9 +1,19 @@
 name: Deploy to GitHub Pages
+
 on:
-  push: { branches: [main] }
+  push:
+    branches: [main]
   workflow_dispatch:
-permissions: { contents: read, pages: write, id-token: write }
-concurrency: { group: pages, cancel-in-progress: true }
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,17 +21,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+      - uses: actions/configure-pages@v5
       - run: npm install
       - run: npm run build
         env:
           VITE_API_URL: https://script.google.com/macros/s/AKfycbwXVDa29PnfEhkJ12RJ-eE6Hbz-tMUUugcb8YZCvcM0H0oDV6LSwwRK5pdLe2dbOhJ4Sg/exec
       - uses: actions/upload-pages-artifact@v3
-        with: { path: dist }
+        with:
+          path: dist
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: d
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
